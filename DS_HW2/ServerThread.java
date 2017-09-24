@@ -1,28 +1,18 @@
 
 import java.net.*; import java.io.*; import java.util.*;
-public class ServerTcpThread extends Thread {
-    InventoryTable inventory;
-    OrderTable orders;
+public class ServerThread extends Thread {
+    SeatingTable seats;
     Socket theClient;
 
-    public ServerTcpThread(InventoryTable inventory, OrderTable orderTable, Socket s) {
-        this.inventory = inventory;
-        this.orders = orderTable;
+    public ServerThread(SeatingTable seatingTable, Socket s) {
+        this.seats = seatingTable;
         this.theClient = s;
-    }
-
-    class SortByName implements Comparator<InventoryTable.InventoryItem> {
-        public int compare(InventoryTable.InventoryItem a, InventoryTable.InventoryItem b)
-        {
-            return a.name.compareTo(b.name);
-        }
     }
 
     public void run() {
         String command;
         
         try {
-            //TCP
             Scanner sc = new Scanner(theClient.getInputStream());
             PrintWriter pout = new PrintWriter(theClient.getOutputStream());
             command = sc.nextLine();
@@ -30,7 +20,6 @@ public class ServerTcpThread extends Thread {
             System.out.println("received:" + command);
             String[] tokens = command.replaceAll("(\\r|\\n)", "").split(" ");
             
-            //TCP
             Scanner st = new Scanner(command);          
             String tag = st.next();
            
@@ -82,7 +71,6 @@ public class ServerTcpThread extends Thread {
             //System.out.println(packetString);
             pout.println(packetString);
          
-            //TCP
             pout.flush();
             theClient.close();
         } catch (IOException e) {
