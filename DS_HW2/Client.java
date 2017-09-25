@@ -1,8 +1,7 @@
+package DS_HW2;
 
 import java.net.*;
 import java.io.*;
-import java.util.Scanner;
-
 import java.util.Scanner;
 
 public class Client {
@@ -32,7 +31,6 @@ public class Client {
 
         hostAddress = args[0];
         tcpPort = Integer.parseInt(args[1]);
-        udpPort = Integer.parseInt(args[2]);
     
         Scanner sc = new Scanner(System.in);
         System.out.println("Enter a command:"); 
@@ -45,7 +43,7 @@ public class Client {
                 // TODO: send appropriate command to the server and display the
                 // appropriate responses form the server
                 try {
-                    myClient.getSocket(mode, hostAddress, portNum);
+                    myClient.getSocket(hostAddress, portNum);
                     myClient.pout.println(cmd);
                     myClient.pout.flush();
                     //int retValue = din.nextInt();

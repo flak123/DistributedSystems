@@ -1,22 +1,22 @@
+package DS_HW2;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+
 import java.net.*;
-import java.io.*;
-import java.util.stream.Stream;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class Server {
+    int myId;
+    String myHost;
+    int myPort;
     
     public class ServerInfo {
-        int myId;
+        int servId;
         String hostName;
         int portNum;
 
         public ServerInfo(int id, String hostName, int portNum) {
-            this.id = id;
+            this.servId = id;
             this.hostName = hostName;
             this.portNum = portNum;
         }
@@ -25,7 +25,25 @@ public class Server {
     SeatingTable seats;
     ArrayList<ServerInfo> serverDirectory = new ArrayList<ServerInfo>();
   
-    public Server(){
+    public Server(int id, int numServ){
+        this.myId = id;
+        Scanner scanner = new Scanner(System.in);
+        String userInput;
+        String[] userInputPieces;
+        String otherHost;
+        int otherPort;
+        for (int i = 0; i < numServ; i++) {
+            System.out.println("Enter the host:port for Server " + i);
+            userInput = scanner.nextLine();
+            // XXX: assumes perfect input. Should add err checking
+            userInputPieces = userInput.split(":");
+            otherHost = userInputPieces[0];
+            otherPort = Integer.parseInt(userInputPieces[1]);
+            ServerInfo s = new ServerInfo(i, otherHost, otherPort);
+            this.serverDirectory.add(s);    
+        }
+        this.myHost = this.serverDirectory.get(this.myId).hostName;
+        this.myPort = this.serverDirectory.get(this.myId).portNum;
         // TODO: sync stuff here
     }
   
@@ -42,7 +60,7 @@ public class Server {
                 ServerSocket listener = new ServerSocket(this.portNum);
                 Socket s;
                 while((s = listener.accept()) != null) {
-                    Thread t = new ServerTcpThread(this.ns.seats, s);
+                    Thread t = new ServerThread(this.ns.seats, s);
                     t.start();
                 }
             } catch (Exception e) {
@@ -65,29 +83,12 @@ public class Server {
         }
         serverID = Integer.parseInt(args[0]);
         numServ = Integer.parseInt(args[1]);
-        numSeats = Integer.parseInt(args[2]);
-        
-        Scanner scanner = new Scanner(System.in);
-        String userInput;
-        String[] userInputPieces;
-        String otherHost;
-        int otherPort;
-        ServerInfo s;
-        for (int i = 0; i < numServ; i++) {
-            System.out.printlin("Enter the host:port for Server " + i);
-            userInput = scanner.nextLine();
-            // XXX: assumes perfect input. Should add err checking
-            userInputPieces = userInput.split(":");
-            otherHost = userInputPieces[0];
-            otherPort = Integer.parseInt(userPieces[1]);
-            s = ServerInfo(i, otherHost, otherPort);
-            serverDirectory.add(s);    
-        }   
+        numSeats = Integer.parseInt(args[2]);   
 
         //Listener
-        Server ns = new Server();
+        Server ns = new Server(serverID, numServ);
         System.out.println("Server started:");
-        tcpSocket s1 = new tcpSocket(serverDirectory[myId].portNum, ns);
+        tcpSocket s1 = new tcpSocket(ns.myPort, ns);
         Thread t1=new Thread(s1);
         t1.start();   
     

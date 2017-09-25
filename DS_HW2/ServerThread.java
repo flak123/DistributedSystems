@@ -1,5 +1,9 @@
+package DS_HW2;
 
-import java.net.*; import java.io.*; import java.util.*;
+import java.net.*;
+import java.io.*;
+import java.util.*;
+
 public class ServerThread extends Thread {
     SeatingTable seats;
     Socket theClient;
@@ -25,47 +29,50 @@ public class ServerThread extends Thread {
            
             String packetString = "";
             //common
-            if (tokens[0].equals("purchase")) {
-                int quantity = Integer.parseInt(tokens[3]);
-                int successCode = inventory.update(tokens[2], quantity);
-                if (successCode == 0) {
-                    OrderTable.Order newOrder = orders.add(tokens[1], tokens[2], Integer.parseInt(tokens[3]));
-                    packetString = "Your order has been placed, " + 
-                        newOrder.id + " " + newOrder.username + " " +
-                        newOrder.productName + " " + newOrder.quantity + "\n";
-                } else if (successCode == 1) {
-                    packetString = "Not Available - Not enough items\n";
-                } else if (successCode == 2) {
-                    packetString = "Not Available - We do not sell this product\n";
+            if (tokens[0].equals("reserve")) {
+                String bookName = tokens[1];
+                int successCode = seats.reserveSeat(bookName);
+                if (successCode >= 0) {
+                    // success
+                    packetString = "Seat assigned to you is " + 
+                        successCode + "\n";
+                } else if (successCode == -2) {
+                    packetString = "Sold out - No seat available\n";
+                } else if (successCode == -3) {
+                    packetString = "Seat already booked against the name provided\n";
                 }       
-            } else if (tokens[0].equals("cancel")) {
-                OrderTable.Order cancelledOrder = orders.delete(Integer.parseInt(tokens[1]));
-                if (cancelledOrder.id != -1) {
-                    System.out.println(cancelledOrder);
-                    inventory.update(cancelledOrder.productName, (-1*cancelledOrder.quantity));
-                    packetString = "Order " + cancelledOrder.id + " is cancelled\n";
-                } else {
-                    packetString = cancelledOrder.id + " not found, no such order\n";
+            } else if (tokens[0].equals("bookSeat")) {
+                String bookName = tokens[1];
+                int seatNum = Integer.parseInt(tokens[2]);
+                int successCode = seats.bookSeat(bookName, seatNum);
+                if (successCode >= 0) {
+                    //success
+                    packetString = "Seat assigned to you is " + 
+                        successCode + "\n";
+                } else if (successCode == -1) {
+                    packetString = seatNum + " is not available\n";
+                } else if (successCode == -3) {
+                    packetString = "Seat already booked against the name provided\n";
                 }
             } else if (tokens[0].equals("search")) {
-                OrderTable userOrders = orders.searchByUser(tokens[1]);
-                if (userOrders.table.size() == 0) {
-                    packetString = "No order found for " + tokens[1] + "\n";
-                } else {
-                    for (int i=0; i<userOrders.table.size(); i++) {
-                        OrderTable.Order o = userOrders.table.get(i);
-                        packetString += o.id + ",  " + o.productName + ", " + o.quantity + "\n";
-                    }
+                String bookName = tokens[1];
+                int successCode = seats.searchSeat(bookName);
+                if (successCode >= 0) {
+                    //success
+                    packetString = "Seat assigned to you is " + 
+                        successCode + "\n";
+                } else if (successCode == -4) {
+                    packetString = "No reservation found for " + bookName + "\n";
                 }
-            } else if (tokens[0].equals("list")) {
-                InventoryTable.InventoryItem [] items = new InventoryTable.InventoryItem [inventory.table.size()];
-                for(int i=0; i<inventory.table.size(); i++) {
-                    InventoryTable.InventoryItem item = inventory.table.get(i);
-                    items[i] = item;
-                }
-                Arrays.sort(items, new SortByName());
-                for (InventoryTable.InventoryItem item : items) {
-                    packetString += item.name + " " + item.quantity + "\n";
+            } else if (tokens[0].equals("delete")) {
+                String bookName = tokens[1];
+                int successCode = seats.deleteSeat(bookName);
+                if (successCode >= 0) {
+                    //success
+                    packetString = "Reservation cancelled for seat " 
+                            + successCode + "\n";
+                } else if (successCode == -4) {
+                    packetString = "No reservation found for " + bookName + "\n";
                 }
             }
             //System.out.println(packetString);

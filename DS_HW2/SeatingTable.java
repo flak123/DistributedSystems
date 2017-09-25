@@ -1,21 +1,5 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+package DS_HW2;
 
-/**
- *
- * @author Haley
- */
-//import java.net.*; import java.io.*; import java.util.*;
-//import java.io.IOException;
-//import java.nio.file.Files;
-//import java.nio.file.Path;
-//import java.nio.file.Paths;
-//import java.net.*;
-//import java.io.*;
-//import java.util.stream.Stream;
 
 public class SeatingTable {
     private final Seat[] seatArray;
@@ -46,6 +30,9 @@ public class SeatingTable {
        this.capacity = 0;
     }
     
+    // no available seats: -2
+    // user already booked seat: -3
+    // seat sucsessfully booked: <positive seatNum>
     public int reserveSeat(String name){
         int check = checkPreviousReservations(name);
         if (check != 0){
@@ -60,7 +47,14 @@ public class SeatingTable {
         return check;
     }
     
+    // user already booked seat: -3
+    // seat not available: -1
+    // seat successfully booked: positive <seatNum>
     public int bookSeat(String name, int num){
+        int alreadyBooked = searchSeat(name);
+        if (alreadyBooked != -4) {
+            return -3;
+        }
         if(seatArray[num - 1].available){
             seatArray[num - 1].updateSeat(name);
             capacity++;
@@ -78,6 +72,8 @@ public class SeatingTable {
         return -4;
     }
     
+    // if user does not have booking: -4
+    // successful delete: positive <seatNum>
     public int deleteSeat(String name){
         int num = searchSeat(name);
         if(num != -4){
