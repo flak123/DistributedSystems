@@ -17,7 +17,8 @@ public class Client {
   
   
     public static void main (String[] args) {
-
+        String hostAddress;
+        int tcpPort;
         Client myClient = new Client();
 
         if (args.length != 3) {
@@ -27,20 +28,16 @@ public class Client {
             System.out.println("\t(3) <udpPort>: the port number for UDP connection");
             System.exit(-1);
         }
+
+        hostAddress = args[0];
+        tcpPort = Integer.parseInt(args[1]);
     
         Scanner sc = new Scanner(System.in);
-        System.out.println("How many servers are there?");
-        int numServers = Integer.parseInt(sc.nextLine());
-        String [] serverInput = new String[numServers];
-        for(int i = 0; i < numServers; i++){
-            serverInput[i] = sc.nextLine();
-        }
-        ServerTable myServers = new ServerTable(numServers, serverInput);
         System.out.println("Enter a command:"); 
         while(sc.hasNextLine()) {
             String cmd = sc.nextLine();
             String[] tokens = cmd.split(" ");
-            
+            int portNum = tcpPort;
 
             if ((tokens[0].equals("purchase")) || (tokens[0].equals("cancel")) || (tokens[0].equals("search")) || (tokens[0].equals("list"))) {
                 // TODO: send appropriate command to the server and display the

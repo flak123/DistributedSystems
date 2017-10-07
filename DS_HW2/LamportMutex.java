@@ -13,11 +13,12 @@ public class LamportMutex {
     Socket otherServer; // socket to communicate with other servers
     Scanner din;
     PrintStream pout;
+    ServerTable neighbors;
 
     public LamportMutex(int myId) {
         this.myId = myId;
 	c = new LamportClock(myId);
-	q = new PriorityQueue<LamportClock>(n, 	
+	q = new PriorityQueue<LamportClock>(this.neighbors.serverList.length, 	
             new Comparator<LamportClock>() {
                 public int compare(LamportClock a, LamportClock b) {
                     if (a.getValue() > b.getValue()) {
@@ -41,26 +42,36 @@ public class LamportMutex {
 		c.tick();
 		q.add(c);
 		// TODO: neighbors in Server.Java
-        for (int i = 0; i < neighbors.length(); i++) {
-            this.getServerSocket(neighbors[i].host, neighbors[i].port);
-            pout.flush("request " + myID + " " + c.getValue());
+        for (int i = 0; i < neighbors.serverList.length; i++) {
+            try {
+                this.getServerSocket(neighbors.serverList[i].hostAddress, neighbors.serverList[i].portNum);
+                pout.println("request " + this.myId + " " + c.getValue());
+                pout.flush();
+            } catch (IOException e) {
+                System.out.println(e);
+            }
         }
 		numAcks = 0;
-	while ((q.peek().pid != myId) || (numAcks < neighbors.length()-1)) {
+	while ((q.peek().pid != myId) || (numAcks < neighbors.serverList.length-1)) {
             try {
                 wait();
-		    } catch (InterruptedException e) {
-			    System.err.println(e);
-		    }
+            } catch (InterruptedException e) {
+                System.err.println(e);
+            }
 	}
     }
 	
     public synchronized void releaseCS() {
 	q.remove();
         //sendMsg(neighbors, "release", c.getValue());
-        for (int i = 0; i < neighbors.length; i++) {
-            this.getServerSocket(neighbors[i].host, neighbors[i].port);
-            pout.flush("release " + this.myID + " " + c.getValue());
+        for (int i = 0; i < neighbors.serverList.length; i++) {
+            try {
+                this.getServerSocket(neighbors.serverList[i].hostAddress, neighbors.serverList[i].portNum);
+                pout.println("release " + this.myId + " " + c.getValue());
+                pout.flush();
+            } catch (IOException e) {
+                System.out.println(e);
+            }
         }
     }
 	
@@ -72,14 +83,14 @@ public class LamportMutex {
         int otherLCV = Integer.parseInt(tokens[2]);
         c.receiveAction(otherLCV);
         if (tag.equals("request")) {
-            q.add(new LamportClock(otherPID, otherLCV));
+            q.add(new LamportClock(otherPid, otherLCV));
             //sendMsg(src, "ack",c.getValue());
-            // TODO: We have to look src up in neighbor dir? Pass in?
-            for (int i = 0; i < neighbors.length; i++) {
-                if (neighbors[i].pid == otherPid) {
-                   this.getServerSocket(neighbors[i].host, neighbors[i].port);
-                   pout.flush("ack " + this.myID + " " + c.getValue());
-                }
+            try {
+                this.getServerSocket(neighbors.serverList[otherPid].hostAddress, neighbors.serverList[otherPid].portNum);
+                pout.println("ack " + this.myId + " " + c.getValue());
+                pout.flush();
+            } catch (IOException e) {
+                System.out.println(e);
             }
         } else if (tag.equals("release")) {
             Iterator<LamportClock> it =  q.iterator();			    

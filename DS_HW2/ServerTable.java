@@ -1,11 +1,11 @@
 package DS_HW2;
 
 public class ServerTable{
-        private final ServerInfo[] serverList;
+    public final ServerInfo[] serverList;
         
         public class ServerInfo{
-            private final String hostAddress;
-            private final int portNum;
+            public final String hostAddress;
+            public final int portNum;
 
             public ServerInfo(String hostPort){
                 String[] hostPortArray = hostPort.split(":");

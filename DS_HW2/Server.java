@@ -29,7 +29,6 @@ public class Server {
   
     public Server(int id, int numServ){
         this.myId = id;
-        this.lcv = new LamportClock();
         this.lamportMutex = new LamportMutex(id);
         Scanner scanner = new Scanner(System.in);
         String userInput;
@@ -50,7 +49,8 @@ public class Server {
         }
         this.myHost = this.serverDirectory.get(this.myId).hostName;
         this.myPort = this.serverDirectory.get(this.myId).portNum;
-        lamportMutex.requestCS();
+        // TODO: how to initialiize
+        //lamportMutex.requestCS();
         // TODO: now in CS. HERE we need to copy ServerTable
     }
   
@@ -73,21 +73,22 @@ public class Server {
                     // ack <pid> <lcv>
                     // release <pid> <lcv>
                     Scanner sc = new Scanner(s.getInputStream());
+                    String command;
                     command = sc.nextLine();
                     String[] tokens = command.replaceAll("(\\r|\\n)", "").split(" ");
                     if (tokens[0] == "request" || 
                         tokens[0] == "release" || 
-                        token[0] == "ack"
+                        tokens[0] == "ack"
                     ) {
                         // Server request. Do sync stuff.
-                        lamportMutex.handleMsg(command);
+                        ns.lamportMutex.handleMsg(command);
                     } else {
                         // spawn ServerThread to handle client requests
-                        lamportMutex.requestCS(s);
-                        Thread t = new ServerThread(this.ns.seats, s, this.lcv);
+                        ns.lamportMutex.requestCS(s);
+                        Thread t = new ServerThread(this.ns.seats, s);
                         t.start();
                         t.join();
-                        lamportMutex.releaseCS();
+                        ns.lamportMutex.releaseCS();
                     }
                 }
             } catch (Exception e) {
