@@ -9,6 +9,8 @@ public class Server {
     int myId;
     String myHost;
     int myPort;
+    LamportClock lcv;
+    LamportMutex lamportMutex;
     
     public class ServerInfo {
         int servId;
@@ -27,11 +29,15 @@ public class Server {
   
     public Server(int id, int numServ){
         this.myId = id;
+        this.lcv = new LamportClock();
+        this.lamportMutex = new LamportMutex(id);
         Scanner scanner = new Scanner(System.in);
         String userInput;
         String[] userInputPieces;
         String otherHost;
         int otherPort;
+
+
         for (int i = 0; i < numServ; i++) {
             System.out.println("Enter the host:port for Server " + i);
             userInput = scanner.nextLine();
@@ -44,7 +50,8 @@ public class Server {
         }
         this.myHost = this.serverDirectory.get(this.myId).hostName;
         this.myPort = this.serverDirectory.get(this.myId).portNum;
-        // TODO: sync stuff here
+        lamportMutex.requestCS();
+        // TODO: now in CS. HERE we need to copy ServerTable
     }
   
     public static class tcpSocket implements Runnable {
@@ -54,14 +61,34 @@ public class Server {
         public tcpSocket(int portNum, Server ns) {
             this.portNum = portNum;
             this.ns = ns;
-        } 
+        }
+
         public void run() {
             try {
                 ServerSocket listener = new ServerSocket(this.portNum);
                 Socket s;
                 while((s = listener.accept()) != null) {
-                    Thread t = new ServerThread(this.ns.seats, s);
-                    t.start();
+                    // Server sync requests are:
+                    // request <pid> <lcv>
+                    // ack <pid> <lcv>
+                    // release <pid> <lcv>
+                    Scanner sc = new Scanner(s.getInputStream());
+                    command = sc.nextLine();
+                    String[] tokens = command.replaceAll("(\\r|\\n)", "").split(" ");
+                    if (tokens[0] == "request" || 
+                        tokens[0] == "release" || 
+                        token[0] == "ack"
+                    ) {
+                        // Server request. Do sync stuff.
+                        lamportMutex.handleMsg(command);
+                    } else {
+                        // spawn ServerThread to handle client requests
+                        lamportMutex.requestCS(s);
+                        Thread t = new ServerThread(this.ns.seats, s, this.lcv);
+                        t.start();
+                        t.join();
+                        lamportMutex.releaseCS();
+                    }
                 }
             } catch (Exception e) {
               System.err.println("Server aborted:" + e);

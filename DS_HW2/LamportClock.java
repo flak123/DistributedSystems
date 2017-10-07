@@ -1,26 +1,37 @@
 package DS_HW2;
 
 public class LamportClock {
+    int pid;
     int c;
     
-    public LamportClock() {
-        c = 1;
+    public LamportClock(int pid) {
+        this.pid = pid;
+        this.c = 1;
+    }
+
+    public LamportClock(int pid, int startVal) {
+        this.pid = pid;
+        this.c = startVal;
     }
     
     public synchronized int getValue() {
         return c;
     }
+
+    public synchronized int getPid() {
+        return pid;
+    }
     
     public synchronized void tick() { // on internal events
-        c = c + 1;
+        this.c = this.c + 1;
     }
     
     public synchronized void sendAction() {
        // include c in message
-        c = c + 1;      
+        this.c = this.c + 1;      
     }
     
-    public synchronized void receiveAction(int src, int sentValue) {
-        c = Math.max(c, sentValue) + 1;
+    public synchronized void receiveAction(int otherC) {
+        this.c = Math.max(this.c, otherC) + 1;
     }
 }

@@ -8,7 +8,7 @@ public class ServerThread extends Thread {
     SeatingTable seats;
     Socket theClient;
 
-    public ServerThread(SeatingTable seatingTable, Socket s) {
+    public ServerThread(SeatingTable seatingTable, Socket s, LamportClock lcv) {
         this.seats = seatingTable;
         this.theClient = s;
     }
