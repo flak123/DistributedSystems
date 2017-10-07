@@ -1,0 +1,106 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+/**
+ *
+ * @author Haley
+ */
+//import java.net.*; import java.io.*; import java.util.*;
+//import java.io.IOException;
+//import java.nio.file.Files;
+//import java.nio.file.Path;
+//import java.nio.file.Paths;
+//import java.net.*;
+//import java.io.*;
+//import java.util.stream.Stream;
+
+public class SeatingTable {
+    private final Seat[] seatArray;
+    private int capacity;
+    
+    public class Seat{
+        private String name;
+        private Boolean available;
+        //private final int num;
+            
+        public Seat(int num){
+            this.name = " ";
+            this.available = true;
+            //this.num = num;
+        }
+        
+        public void updateSeat(String name){
+            this.name = name;
+            this.available = !this.available;
+        }
+    }
+
+    public SeatingTable(int numberOfSeats){
+       this.seatArray = new Seat[numberOfSeats];
+       for(int i = 0; i < numberOfSeats; i++){
+           this.seatArray[i] = new Seat(i);
+       }
+       this.capacity = 0;
+    }
+    
+    public int reserveSeat(String name){
+        int check = checkPreviousReservations(name);
+        if (check != 0){
+            return check;
+        }
+        for(int i = 0; i < seatArray.length; i++){
+            if(seatArray[i].available){
+                seatArray[i].updateSeat(name);
+                return i + 1;
+            }
+        }
+        return check;
+    }
+    
+    public int bookSeat(String name, int num){
+        if(seatArray[num - 1].available){
+            seatArray[num - 1].updateSeat(name);
+            capacity++;
+            return num;
+        }
+        return -1;
+    }
+    
+    public int searchSeat(String name){
+        for(int i =0; i < seatArray.length; i++){
+            if(name.equals(seatArray[i].name)){
+                return i + 1;
+            }
+        }
+        return -4;
+    }
+    
+    public int deleteSeat(String name){
+        int num = searchSeat(name);
+        if(num != -4){
+            seatArray[num].updateSeat(" ");
+            capacity--;
+            return num + 1;
+        }
+        else{
+            return num;
+        }
+    }
+    
+    public int checkPreviousReservations(String name){
+        if(capacity == seatArray.length){
+            return -2;
+        }
+        else if(searchSeat(name) != -1){
+            return -3;
+        }
+        else{
+            return 0;
+        }
+    }
+    
+}
+
