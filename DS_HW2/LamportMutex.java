@@ -15,10 +15,10 @@ public class LamportMutex {
     PrintStream pout;
     ServerTable neighbors;
 
-    public LamportMutex(int myId) {
+    public LamportMutex(int myId, ServerTable serverDir) {
         this.myId = myId;
-	c = new LamportClock(myId);
-	q = new PriorityQueue<LamportClock>(this.neighbors.serverList.length, 	
+	this.c = new LamportClock(myId);
+	this.q = new PriorityQueue<LamportClock>(this.neighbors.serverList.length, 	
             new Comparator<LamportClock>() {
                 public int compare(LamportClock a, LamportClock b) {
                     if (a.getValue() > b.getValue()) {
@@ -30,6 +30,7 @@ public class LamportMutex {
             }
          );
 	numAcks = 0;
+        this.neighbors = serverDir;
     }
 
     public void getServerSocket(String host, int port) throws IOException {

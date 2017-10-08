@@ -11,47 +11,42 @@ public class Server {
     int myPort;
     LamportClock lcv;
     LamportMutex lamportMutex;
-    
-    public class ServerInfo {
-        int servId;
-        String hostName;
-        int portNum;
-
-        public ServerInfo(int id, String hostName, int portNum) {
-            this.servId = id;
-            this.hostName = hostName;
-            this.portNum = portNum;
-        }
-    }
-
     SeatingTable seats;
-    ArrayList<ServerInfo> serverDirectory = new ArrayList<ServerInfo>();
+    ServerTable serverDirectory;
   
     public Server(int id, int numServ){
         this.myId = id;
-        this.lamportMutex = new LamportMutex(id);
         Scanner scanner = new Scanner(System.in);
         String userInput;
         String[] userInputPieces;
         String otherHost;
         int otherPort;
 
-
+        String[] servers = new String[numServ];
         for (int i = 0; i < numServ; i++) {
             System.out.println("Enter the host:port for Server " + i);
             userInput = scanner.nextLine();
             // XXX: assumes perfect input. Should add err checking
-            userInputPieces = userInput.split(":");
-            otherHost = userInputPieces[0];
-            otherPort = Integer.parseInt(userInputPieces[1]);
-            ServerInfo s = new ServerInfo(i, otherHost, otherPort);
-            this.serverDirectory.add(s);    
+            servers[i] = userInput;    
         }
-        this.myHost = this.serverDirectory.get(this.myId).hostName;
-        this.myPort = this.serverDirectory.get(this.myId).portNum;
+        this.serverDirectory = new ServerTable(numServ, servers);
+        this.lamportMutex = new LamportMutex(id, this.serverDirectory);
+        this.myHost = this.serverDirectory.serverList[this.myId].hostAddress;
+        this.myPort = this.serverDirectory.serverList[this.myId].portNum;
         // TODO: how to initialiize
-        //lamportMutex.requestCS();
-        // TODO: now in CS. HERE we need to copy ServerTable
+        try {
+            ServerSocket listener = new ServerSocket(this.myPort);
+            Socket s = listener.accept();
+            this.lamportMutex.requestCS(s);
+        } catch (Exception e) {
+          System.err.println("Server aborted:" + e);
+        }
+        // TODO: now in CS. HERE we need to copy ServerTable, but from who?
+        for (int i = 0; i < numServ; i++) {
+            //TODO: Send msg to all other servs to get highest LCV.
+            // Use otherServ.seats to init this.seats   ===> But how to pass as msg?
+            //this.seats = otherServ.seats
+        }
     }
   
     public static class tcpSocket implements Runnable {
@@ -80,7 +75,7 @@ public class Server {
                         tokens[0] == "release" || 
                         tokens[0] == "ack"
                     ) {
-                        // Server request. Do sync stuff.
+                        // TODO: Server request. Do sync stuff.
                         ns.lamportMutex.handleMsg(command);
                     } else {
                         // spawn ServerThread to handle client requests
