@@ -86,7 +86,28 @@ public class LamportMutex {
             }
         }
     }
-	
+    
+    public synchronized void sendAllSeats() {
+        for (int i = 0; i < neighbors.serverList.length; i++) {
+            sendSeats(i);
+        }
+    }
+    private synchronized void sendSeats(int otherPid) {
+        String[] mySeats = new String[numSeats];
+            for (int i = 0; i < this.numSeats; i++) {
+                mySeats[i] = this.seats.seatArray[i].name + ":" +
+                        this.seats.seatArray[i].available.toString();
+            }
+            try {
+                this.getServerSocket(neighbors.serverList[otherPid].hostAddress, 
+                        neighbors.serverList[otherPid].portNum);
+                pout.println("respInit " + this.myId + " " + c.getValue() + 
+                        mySeats.toString());
+                pout.flush();
+            } catch (IOException e) {
+                System.out.println(e);
+            }
+    }
     public synchronized void handleMsg(String command) {
         // command in format: <action> <pid> <lcv>
         String[] tokens = command.split(" ");
@@ -116,20 +137,7 @@ public class LamportMutex {
             numAcks++;    
         } else if (tag.equals("init")) {
             // send seats over
-            String[] mySeats = new String[numSeats];
-            for (int i = 0; i < this.numSeats; i++) {
-                mySeats[i] = this.seats.seatArray[i].name + ":" +
-                        this.seats.seatArray[i].available.toString();
-            }
-            try {
-                this.getServerSocket(neighbors.serverList[otherPid].hostAddress, 
-                        neighbors.serverList[otherPid].portNum);
-                pout.println("respInit " + this.myId + " " + c.getValue() + 
-                        mySeats.toString());
-                pout.flush();
-            } catch (IOException e) {
-                System.out.println(e);
-            }
+            sendSeats(otherPid);
         } else if (tag.equals("respInit")) {
            // set mySeats
            String[] mySeats = command.substring(command.indexOf("[") + 1, command.indexOf("]")).split(", ");

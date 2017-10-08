@@ -83,6 +83,8 @@ public class Server {
                         Thread t = new ServerThread(this.ns.seats, s);
                         t.start();
                         t.join();
+                        // TODO: send seating table to all other servers
+                        ns.lamportMutex.sendAllSeats();
                         ns.lamportMutex.releaseCS();
                     }
                 }
