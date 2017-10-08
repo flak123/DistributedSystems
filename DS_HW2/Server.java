@@ -2,6 +2,7 @@ package DS_HW2;
 
 
 import java.net.*;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -13,9 +14,12 @@ public class Server {
     LamportMutex lamportMutex;
     SeatingTable seats;
     ServerTable serverDirectory;
+    int numSeats;
   
-    public Server(int id, int numServ){
+    public Server(int id, int numServ, int numSeats){
         this.myId = id;
+        this.numSeats = numSeats;
+        this.seats = new SeatingTable(this.numSeats);
         Scanner scanner = new Scanner(System.in);
         String userInput;
         String[] userInputPieces;
@@ -30,22 +34,17 @@ public class Server {
             servers[i] = userInput;    
         }
         this.serverDirectory = new ServerTable(numServ, servers);
-        this.lamportMutex = new LamportMutex(id, this.serverDirectory);
+        this.lamportMutex = new LamportMutex(id, this.serverDirectory, this.seats);
         this.myHost = this.serverDirectory.serverList[this.myId].hostAddress;
         this.myPort = this.serverDirectory.serverList[this.myId].portNum;
-        // TODO: how to initialiize
+        // initialiize
         try {
             ServerSocket listener = new ServerSocket(this.myPort);
             Socket s = listener.accept();
             this.lamportMutex.requestCS(s);
+            this.seats = this.lamportMutex.getIntital(s);
         } catch (Exception e) {
-          System.err.println("Server aborted:" + e);
-        }
-        // TODO: now in CS. HERE we need to copy ServerTable, but from who?
-        for (int i = 0; i < numServ; i++) {
-            //TODO: Send msg to all other servs to get highest LCV.
-            // Use otherServ.seats to init this.seats   ===> But how to pass as msg?
-            //this.seats = otherServ.seats
+            System.err.println("Server aborted:" + e);
         }
     }
   
@@ -71,11 +70,12 @@ public class Server {
                     String command;
                     command = sc.nextLine();
                     String[] tokens = command.replaceAll("(\\r|\\n)", "").split(" ");
-                    if (tokens[0] == "request" || 
-                        tokens[0] == "release" || 
-                        tokens[0] == "ack"
+                    if (tokens[0].equals("request") || 
+                        tokens[0].equals("release") || 
+                        tokens[0].equals("ack")     ||
+                        tokens[0].equals("init")    ||
+                        tokens[0].equals("initResp")
                     ) {
-                        // TODO: Server request. Do sync stuff.
                         ns.lamportMutex.handleMsg(command);
                     } else {
                         // spawn ServerThread to handle client requests
@@ -109,7 +109,7 @@ public class Server {
         numSeats = Integer.parseInt(args[2]);   
 
         //Listener
-        Server ns = new Server(serverID, numServ);
+        Server ns = new Server(serverID, numServ, numSeats);
         System.out.println("Server started:");
         tcpSocket s1 = new tcpSocket(ns.myPort, ns);
         Thread t1=new Thread(s1);
