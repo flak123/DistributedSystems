@@ -19,31 +19,40 @@ public class Client {
     public static void main (String[] args) {
         String hostAddress;
         int tcpPort;
+        int timeoutTime = 100;
         Client myClient = new Client();
-
-        if (args.length != 3) {
-            System.out.println("ERROR: Provide 3 arguments");
-            System.out.println("\t(1) <hostAddress>: the address of the server");
-            System.out.println("\t(2) <tcpPort>: the port number for TCP connection");
-            System.out.println("\t(3) <udpPort>: the port number for UDP connection");
-            System.exit(-1);
-        }
-
         hostAddress = args[0];
         tcpPort = Integer.parseInt(args[1]);
     
         Scanner sc = new Scanner(System.in);
+        int numServers = Integer.parseInt(sc.nextLine());
+        String [] serverInput = new String[numServers];
+        for(int i = 0; i < numServers; i++){
+            serverInput[i] = sc.nextLine();
+        }
+        ServerTable myServers = new ServerTable(numServers, serverInput);
         System.out.println("Enter a command:"); 
         while(sc.hasNextLine()) {
             String cmd = sc.nextLine();
             String[] tokens = cmd.split(" ");
             int portNum = tcpPort;
 
-            if ((tokens[0].equals("purchase")) || (tokens[0].equals("cancel")) || (tokens[0].equals("search")) || (tokens[0].equals("list"))) {
+            if ((tokens[0].equals("reserve")) || (tokens[0].equals("bookSeat")) || (tokens[0].equals("search")) || (tokens[0].equals("delete"))) {
                 // TODO: send appropriate command to the server and display the
                 // appropriate responses form the server
                 try {
-                    myClient.getSocket(hostAddress, portNum);
+                    Boolean connection = false;
+                    while(!connection){
+                        for(int i = 0; i < numServers; i++){
+                            myClient.getSocket(myServers.serverList[i].hostAddress, myServers.serverList[i].portNum);
+                            try{
+                                myClient.tcpServer.connect(new InetSocketAddress(myServers.serverList[i].hostAddress, myServers.serverList[i].portNum), timeoutTime);
+                                connection = true;
+                            }catch(SocketTimeoutException e){
+                                System.out.println("Connection failed "  + e);
+                            }
+                        }
+                    }
                     myClient.pout.println(cmd);
                     myClient.pout.flush();
                     //int retValue = din.nextInt();

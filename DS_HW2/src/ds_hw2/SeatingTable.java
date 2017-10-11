@@ -2,18 +2,21 @@ package DS_HW2;
 
 
 public class SeatingTable {
-    private final Seat[] seatArray;
-    private int capacity;
+    public final Seat[] seatArray;
+    public int capacity;
     
     public class Seat{
-        private String name;
-        private Boolean available;
-        //private final int num;
+        public String name;
+        public Boolean available;
             
         public Seat(int num){
             this.name = " ";
             this.available = true;
-            //this.num = num;
+        }
+        
+        public Seat(String name, boolean available){
+            this.name = name;
+            this.available = available;
         }
         
         public void updateSeat(String name){
@@ -28,6 +31,19 @@ public class SeatingTable {
            this.seatArray[i] = new Seat(i);
        }
        this.capacity = 0;
+    }
+    
+    public SeatingTable(int numberOfSeats, String[] existing){
+       this.seatArray = new Seat[numberOfSeats];
+       this.capacity = 0;
+       for(int i = 0; i < numberOfSeats; i++){
+           String[] seatData = existing[i].split(":");
+           boolean av = Boolean.parseBoolean(seatData[1]);
+           Seat thisSeat = new Seat(seatData[0], av);
+           if (!this.seatArray[i].available) {
+               this.capacity++;
+           }
+       }
     }
     
     // no available seats: -2
