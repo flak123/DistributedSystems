@@ -1,4 +1,3 @@
-package DS_HW2;
 
 import java.net.*;
 import java.io.*;
@@ -20,14 +19,20 @@ public class Client {
         String hostAddress;
         int tcpPort;
         int timeoutTime = 100;
+        if (args.length != 2) {
+            System.out.println("Error: Please run >>java Client HOST PORT");
+            System.exit(1);
+        }
         Client myClient = new Client();
         hostAddress = args[0];
         tcpPort = Integer.parseInt(args[1]);
     
         Scanner sc = new Scanner(System.in);
+        System.out.println("Enter the number of Servers: ");
         int numServers = Integer.parseInt(sc.nextLine());
         String [] serverInput = new String[numServers];
         for(int i = 0; i < numServers; i++){
+            System.out.println("Enter the host:port for Server " + i);
             serverInput[i] = sc.nextLine();
         }
         ServerTable myServers = new ServerTable(numServers, serverInput);
@@ -42,17 +47,21 @@ public class Client {
                 // appropriate responses form the server
                 try {
                     Boolean connection = false;
-                    while(!connection){
-                        for(int i = 0; i < numServers; i++){
+                    int i = 0;
+                    while(!connection && i < numServers){
+                        //myClient.getSocket(myServers.serverList[i].hostAddress, myServers.serverList[i].portNum);
+                        try{
                             myClient.getSocket(myServers.serverList[i].hostAddress, myServers.serverList[i].portNum);
-                            try{
-                                myClient.tcpServer.connect(new InetSocketAddress(myServers.serverList[i].hostAddress, myServers.serverList[i].portNum), timeoutTime);
-                                connection = true;
-                            }catch(SocketTimeoutException e){
-                                System.out.println("Connection failed "  + e);
-                            }
+                            // TODO: get this to work. Right now we are double connecting
+                            //myClient.tcpServer.connect(new InetSocketAddress(myServers.serverList[i].hostAddress, myServers.serverList[i].portNum), timeoutTime);
+                            connection = true;
+                            System.out.println("Connection successful");
+                        }catch(SocketTimeoutException e){
+                            System.out.println("Connection failed "  + e);
                         }
+                        i++;
                     }
+                    System.out.println("sending cmd");
                     myClient.pout.println(cmd);
                     myClient.pout.flush();
                     //int retValue = din.nextInt();

@@ -1,5 +1,3 @@
-package DS_HW2;
-
 import java.net.*;
 import java.io.*;
 import java.util.*;
@@ -7,24 +5,24 @@ import java.util.*;
 public class ServerThread extends Thread {
     SeatingTable seats;
     Socket theClient;
+    String command;
 
-    public ServerThread(SeatingTable seatingTable, Socket s) {
+    public ServerThread(SeatingTable seatingTable, Socket s, String command) {
         this.seats = seatingTable;
         this.theClient = s;
+        this.command = command;
     }
 
     public void run() {
-        String command;
-        
+        System.out.println("Started runnin'"); 
         try {
             Scanner sc = new Scanner(theClient.getInputStream());
             PrintWriter pout = new PrintWriter(theClient.getOutputStream());
-            command = sc.nextLine();
             
-            System.out.println("received:" + command);
-            String[] tokens = command.replaceAll("(\\r|\\n)", "").split(" ");
+            System.out.println("received:" + this.command);
+            String[] tokens = this.command.replaceAll("(\\r|\\n)", "").split(" ");
             
-            Scanner st = new Scanner(command);          
+            Scanner st = new Scanner(this.command);          
             String tag = st.next();
            
             String packetString = "";
@@ -32,7 +30,7 @@ public class ServerThread extends Thread {
             if (tokens[0].equals("reserve")) {
                 String bookName = tokens[1];
                 int successCode = seats.reserveSeat(bookName);
-                if (successCode >= 0) {
+                if (successCode > 0) {
                     // success
                     packetString = "Seat assigned to you is " + 
                         successCode + "\n";
@@ -83,6 +81,5 @@ public class ServerThread extends Thread {
         } catch (IOException e) {
             System.err.println(e);
         }
-
     }
 }

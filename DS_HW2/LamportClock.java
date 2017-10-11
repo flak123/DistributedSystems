@@ -1,4 +1,3 @@
-package DS_HW2;
 
 public class LamportClock {
     int pid;

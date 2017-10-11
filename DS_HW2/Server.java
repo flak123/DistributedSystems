@@ -1,5 +1,3 @@
-package DS_HW2;
-
 
 import java.net.*;
 import java.io.*;
@@ -17,7 +15,7 @@ public class Server {
     int numSeats;
   
     public Server(int id, int numServ, int numSeats){
-        this.myId = id;
+        this.myId = id-1;
         this.numSeats = numSeats;
         this.seats = new SeatingTable(this.numSeats);
         Scanner scanner = new Scanner(System.in);
@@ -34,64 +32,19 @@ public class Server {
             servers[i] = userInput;    
         }
         this.serverDirectory = new ServerTable(numServ, servers);
-        this.lamportMutex = new LamportMutex(id, this.serverDirectory, this.seats);
+        this.lamportMutex = new LamportMutex(this.myId, this.serverDirectory, this.seats);
         this.myHost = this.serverDirectory.serverList[this.myId].hostAddress;
         this.myPort = this.serverDirectory.serverList[this.myId].portNum;
         // initialiize
-        try {
-            ServerSocket listener = new ServerSocket(this.myPort);
-            Socket s = listener.accept();
-            this.lamportMutex.requestCS(s);
-            this.seats = this.lamportMutex.getIntital(s);
-        } catch (Exception e) {
-            System.err.println("Server aborted:" + e);
-        }
-    }
-  
-    public static class tcpSocket implements Runnable {
-        int portNum;
-        Server ns;
-      
-        public tcpSocket(int portNum, Server ns) {
-            this.portNum = portNum;
-            this.ns = ns;
-        }
-
-        public void run() {
-            try {
-                ServerSocket listener = new ServerSocket(this.portNum);
-                Socket s;
-                while((s = listener.accept()) != null) {
-                    // Server sync requests are:
-                    // request <pid> <lcv>
-                    // ack <pid> <lcv>
-                    // release <pid> <lcv>
-                    Scanner sc = new Scanner(s.getInputStream());
-                    String command;
-                    command = sc.nextLine();
-                    String[] tokens = command.replaceAll("(\\r|\\n)", "").split(" ");
-                    if (tokens[0].equals("request") || 
-                        tokens[0].equals("release") || 
-                        tokens[0].equals("ack")     ||
-                        tokens[0].equals("init")    ||
-                        tokens[0].equals("initResp")
-                    ) {
-                        ns.lamportMutex.handleMsg(command);
-                    } else {
-                        // spawn ServerThread to handle client requests
-                        ns.lamportMutex.requestCS(s);
-                        Thread t = new ServerThread(this.ns.seats, s);
-                        t.start();
-                        t.join();
-                        // TODO: send seating table to all other servers
-                        ns.lamportMutex.sendAllSeats();
-                        ns.lamportMutex.releaseCS();
-                    }
-                }
-            } catch (Exception e) {
-              System.err.println("Server aborted:" + e);
-            }
-        }
+        // TODO: Add this stuff back in with timeout Right now it causes deadlock
+        //try {
+        //    ServerSocket listener = new ServerSocket(this.myPort);
+        //    Socket s = listener.accept();
+        //    this.lamportMutex.requestCS(s);
+        //    this.seats = this.lamportMutex.getIntital(s);
+        //} catch (Exception e) {
+        //    System.err.println("Server aborted:" + e);
+        //}
     }
   
     public static void main (String[] args) {
@@ -113,9 +66,46 @@ public class Server {
         //Listener
         Server ns = new Server(serverID, numServ, numSeats);
         System.out.println("Server started:");
-        tcpSocket s1 = new tcpSocket(ns.myPort, ns);
-        Thread t1=new Thread(s1);
-        t1.start();   
-    
+        try {
+            ServerSocket listener = new ServerSocket(ns.myPort);
+            Socket s;
+            while((s = listener.accept()) != null) {
+                // Server sync requests are:
+                // request <pid> <lcv>
+                // ack <pid> <lcv>
+                // release <pid> <lcv>
+                Scanner sc = new Scanner(s.getInputStream());
+                String command;
+                command = sc.nextLine();
+                System.out.println("Recieved: " + command);
+                String[] tokens = command.replaceAll("(\\r|\\n)", "").split(" ");
+                if (tokens[0].equals("request") || 
+                    tokens[0].equals("release") || 
+                    tokens[0].equals("ack")     ||
+                    tokens[0].equals("init")    ||
+                    tokens[0].equals("initResp")
+                ) {
+                    ns.lamportMutex.handleMsg(command);
+                } else {
+                    // spawn ServerThread to handle client requests
+                    System.out.println("Waiting on cs...");
+                    ns.lamportMutex.requestCS(s);
+                    System.out.println("Inside CS!!!");
+                    Thread t = new ServerThread(ns.seats, s, command);
+                    t.start();
+                    t.join();
+                    // TODO: send seating table to all other servers
+                    ns.lamportMutex.sendAllSeats();
+                    ns.lamportMutex.releaseCS();
+                    System.out.println("CS RELEASED");
+                    // Status of system
+                    for(int seat=0; seat < ns.seats.seatArray.length; seat++) {
+                        System.out.println(seat + ":  "+  ns.seats.seatArray[seat].name);
+                    }
+                }
+            }
+        } catch (Exception e) {
+          System.err.println("Server aborted:" + e);
+        }
     }
 }
