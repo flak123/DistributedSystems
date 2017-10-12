@@ -1,4 +1,3 @@
-package DS_HW2;
 
 import java.util.*;
 import java.net.*;
@@ -19,12 +18,14 @@ public class LamportMutex {
     int numInitResp;
     int numSeats; // total number of seats. Required for init.
     SeatingTable seats;
+    int timeoutTime;
 
     public LamportMutex(int myId, ServerTable serverDir, SeatingTable seats) {
         this.myId = myId;
         this.seats = seats;
         this.numSeats = seats.seatArray.length;
 	this.c = new LamportClock(myId);
+    this.neighbors = serverDir;
 	this.q = new PriorityQueue<LamportClock>(this.neighbors.serverList.length, 	
             new Comparator<LamportClock>() {
                 public int compare(LamportClock a, LamportClock b) {
@@ -39,7 +40,7 @@ public class LamportMutex {
         this.status = new int[this.neighbors.serverList.length];
         this.status[myId] = c.c;
 	numAcks = 0;
-        this.neighbors = serverDir;
+        this.timeoutTime = 100;
     }
 
     public void getServerSocket(String host, int port) throws IOException {
@@ -52,24 +53,33 @@ public class LamportMutex {
 	c.tick();
 	q.add(c);
         this.status[myId] = c.c;
+        numAcks = 0;
         for (int i = 0; i < neighbors.serverList.length; i++) {
-            try {
-                this.getServerSocket(neighbors.serverList[i].hostAddress, neighbors.serverList[i].portNum);
-                pout.println("request " + this.myId + " " + c.getValue());
-                pout.flush();
-            } catch (IOException e) {
-                System.out.println(e);
+            if (i != this.myId) {
+                try {
+                    //this.getServerSocket(neighbors.serverList[i].hostAddress, neighbors.serverList[i].portNum);
+                    this.otherServer = new Socket();
+                    this.otherServer.connect(new InetSocketAddress(neighbors.serverList[i].hostAddress, neighbors.serverList[i].portNum), 100);
+                    pout.println("request " + this.myId + " " + c.getValue());
+                    pout.flush();
+                    this.otherServer.close();
+                } catch (SocketTimeoutException e) {
+                    System.out.println(e);
+                    numAcks++;
+                } catch (IOException e){
+                    System.out.println(e);
+                }
             }
         }
-	numAcks = 0;
+	
         // TODO:  Not fault tolerant. Need timeout on this while loop
-	while ((q.peek().pid != myId) || (numAcks < neighbors.serverList.length-1)) {
+	    while ((q.peek().pid != myId) || (numAcks < neighbors.serverList.length-1)) {
             try {
                 wait();
             } catch (InterruptedException e) {
                 System.err.println(e);
             }
-	}
+	    }
     }
 	
     public synchronized void releaseCS() {
@@ -77,19 +87,27 @@ public class LamportMutex {
 	q.remove();
         //sendMsg(neighbors, "release", c.getValue());
         for (int i = 0; i < neighbors.serverList.length; i++) {
-            try {
-                this.getServerSocket(neighbors.serverList[i].hostAddress, neighbors.serverList[i].portNum);
-                pout.println("release " + this.myId + " " + c.getValue());
-                pout.flush();
-            } catch (IOException e) {
-                System.out.println(e);
+            if (i != this.myId) {
+                try {
+                    this.otherServer = new Socket();
+                    this.otherServer.connect(new InetSocketAddress(neighbors.serverList[i].hostAddress, neighbors.serverList[i].portNum), timeoutTime);
+                    pout.println("release " + this.myId + " " + c.getValue());
+                    pout.flush();
+                    this.otherServer.close();
+                } catch (SocketTimeoutException e){
+                    System.out.println(e);
+                } catch (IOException e) {
+                    System.out.println(e);
+                }
             }
         }
     }
     
     public synchronized void sendAllSeats() {
         for (int i = 0; i < neighbors.serverList.length; i++) {
-            sendSeats(i);
+            if (i != this.myId) {
+                sendSeats(i);
+            }
         }
     }
     private synchronized void sendSeats(int otherPid) {
@@ -99,12 +117,18 @@ public class LamportMutex {
                         this.seats.seatArray[i].available.toString();
             }
             try {
-                this.getServerSocket(neighbors.serverList[otherPid].hostAddress, 
-                        neighbors.serverList[otherPid].portNum);
+                //this.getServerSocket(neighbors.serverList[otherPid].hostAddress, 
+                //        neighbors.serverList[otherPid].portNum);
+                this.otherServer = new Socket();
+                this.otherServer.connect(new InetSocketAddress(neighbors.serverList[otherPid].hostAddress, 
+                        neighbors.serverList[otherPid].portNum), timeoutTime);
                 pout.println("respInit " + this.myId + " " + c.getValue() + 
                         mySeats.toString());
                 pout.flush();
-            } catch (IOException e) {
+                this.otherServer.close();
+            } catch(SocketTimeoutException e){
+                System.out.println(e);
+            }catch (IOException e) {
                 System.out.println(e);
             }
     }
@@ -117,12 +141,19 @@ public class LamportMutex {
         this.status[otherPid] = otherLCV;
         c.receiveAction(otherLCV);
         if (tag.equals("request")) {
+            System.out.println("REQUESTED");
             q.add(new LamportClock(otherPid, otherLCV));
             //sendMsg(src, "ack",c.getValue());
             try {
-                this.getServerSocket(neighbors.serverList[otherPid].hostAddress, neighbors.serverList[otherPid].portNum);
+                this.otherServer = new Socket();
+                this.otherServer.connect(new InetSocketAddress(neighbors.serverList[otherPid].hostAddress, 
+                        neighbors.serverList[otherPid].portNum), timeoutTime);
+                System.out.println("sending ack to " + neighbors.serverList[otherPid].hostAddress + " : " + neighbors.serverList[otherPid].portNum);
                 pout.println("ack " + this.myId + " " + c.getValue());
                 pout.flush();
+                this.otherServer.close();
+            } catch(SocketTimeoutException e){
+                System.out.println(e);
             } catch (IOException e) {
                 System.out.println(e);
             }
@@ -147,7 +178,7 @@ public class LamportMutex {
         notifyAll();
     }
     
-    public synchronized SeatingTable getIntital(Socket s) {
+    public synchronized SeatingTable getInitial(Socket s) {
         c.tick();
         // this.status will have all the LCV's we have seen. Get largest
         int largest = -1;
@@ -159,13 +190,18 @@ public class LamportMutex {
             }
         }
         try {
-            this.getServerSocket(neighbors.serverList[largePid].hostAddress, neighbors.serverList[largePid].portNum);
+            //this.getServerSocket(neighbors.serverList[largePid].hostAddress, neighbors.serverList[largePid].portNum);
+            this.otherServer = new Socket();
+            this.otherServer.connect(new InetSocketAddress(neighbors.serverList[largePid].hostAddress, 
+                    neighbors.serverList[largePid].portNum), timeoutTime);
             pout.println("init " + this.myId + " " + c.getValue());
             pout.flush();
+            this.otherServer.close();
         } catch (IOException e) {
             System.out.println(e);
         }
         // TODO:  Not fault tolerant. Need timeout on this while loop
+        // Tyler: working on this
         this.numInitResp = 0;
 	while (this.numInitResp < 1) {
             try {

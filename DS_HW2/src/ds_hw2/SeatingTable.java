@@ -1,5 +1,3 @@
-package DS_HW2;
-
 
 public class SeatingTable {
     public final Seat[] seatArray;
@@ -93,9 +91,9 @@ public class SeatingTable {
     public int deleteSeat(String name){
         int num = searchSeat(name);
         if(num != -4){
-            seatArray[num].updateSeat(" ");
+            seatArray[num-1].updateSeat("");
             capacity--;
-            return num + 1;
+            return num;
         }
         else{
             return num;
@@ -106,7 +104,7 @@ public class SeatingTable {
         if(capacity == seatArray.length){
             return -2;
         }
-        else if(searchSeat(name) != -1){
+        else if(searchSeat(name) != -4){
             return -3;
         }
         else{
