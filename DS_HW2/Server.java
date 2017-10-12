@@ -36,14 +36,13 @@ public class Server {
         this.myHost = this.serverDirectory.serverList[this.myId].hostAddress;
         this.myPort = this.serverDirectory.serverList[this.myId].portNum;
         // initialiize
-        // TODO: Add this stuff back in with timeout Right now it causes deadlock
         try {
-            ServerSocket listener = new ServerSocket(this.myPort);
-            Socket s = listener.accept();
+            Socket s = new Socket();
             this.lamportMutex.requestCS(s);
             this.seats = this.lamportMutex.getInitial(s);
+            this.lamportMutex.releaseCS();
         } catch (Exception e) {
-            System.err.println("Server aborted:" + e);
+            System.err.println("ServerError:" + e);
         }
     }
   
