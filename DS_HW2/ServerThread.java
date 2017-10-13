@@ -14,7 +14,6 @@ public class ServerThread extends Thread {
     }
 
     public void run() {
-        System.out.println("Started runnin'"); 
         try {
             Scanner sc = new Scanner(theClient.getInputStream());
             PrintWriter pout = new PrintWriter(theClient.getOutputStream());

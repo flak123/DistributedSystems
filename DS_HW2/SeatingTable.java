@@ -34,8 +34,11 @@ public class SeatingTable {
     public SeatingTable(int numberOfSeats, String[] existing){
        this.seatArray = new Seat[numberOfSeats];
        this.capacity = 0;
+       System.out.println("in SeatingTable constructor");
        for(int i = 0; i < numberOfSeats; i++){
            String[] seatData = existing[i].split(":");
+           System.out.println(seatData[0]);
+           System.out.println(seatData[1]);
            boolean av = Boolean.parseBoolean(seatData[1]);
            Seat thisSeat = new Seat(seatData[0], av);
            if (!this.seatArray[i].available) {

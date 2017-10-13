@@ -15,7 +15,7 @@ public class LamportMutex {
     PrintStream pout;
     ServerTable neighbors;
     String[] initSeats;
-    int numInitResp;
+    int numInitResp = 0;
     int numSeats; // total number of seats. Required for init.
     SeatingTable seats;
     int timeoutTime;
@@ -115,27 +115,35 @@ public class LamportMutex {
         }
     }
     private synchronized void sendSeats(int otherPid) {
-        String[] mySeats = new String[numSeats];
-            for (int i = 0; i < this.numSeats; i++) {
-                mySeats[i] = this.seats.seatArray[i].name + ":" +
-                        this.seats.seatArray[i].available.toString();
+        String mySeats = "";
+        String eachSeat = "";
+        for (int i = 0; i < this.numSeats; i++) {
+            if (this.seats.seatArray[i].available) {
+                eachSeat = this.seats.seatArray[i].name + ":" +
+                    this.seats.seatArray[i].available.toString();
+            } else {
+                eachSeat = ":" +
+                    this.seats.seatArray[i].available.toString();
             }
-            try {
-                //this.getServerSocket(neighbors.serverList[otherPid].hostAddress, 
-                //        neighbors.serverList[otherPid].portNum);
-                this.otherServer = new Socket();
-                this.otherServer.connect(new InetSocketAddress(neighbors.serverList[otherPid].hostAddress, 
-                        neighbors.serverList[otherPid].portNum), timeoutTime);
-                pout = new PrintStream(this.otherServer.getOutputStream());
-                pout.println("respInit " + this.myId + " " + c.getValue() + 
-                        mySeats.toString());
-                pout.flush();
-                this.otherServer.close();
-            } catch(SocketTimeoutException e){
-                System.out.println("SendSeats" + e);
-            }catch (IOException e) {
-                System.out.println("SendSeats" + e);
-            }
+            mySeats = mySeats + eachSeat + ",";
+        }
+        System.out.println("In sendSeats: " + mySeats);
+        try {
+            //this.getServerSocket(neighbors.serverList[otherPid].hostAddress, 
+            //        neighbors.serverList[otherPid].portNum);
+            this.otherServer = new Socket();
+            this.otherServer.connect(new InetSocketAddress(neighbors.serverList[otherPid].hostAddress, 
+                    neighbors.serverList[otherPid].portNum), timeoutTime);
+            pout = new PrintStream(this.otherServer.getOutputStream());
+            pout.println("respInit " + this.myId + " " + c.getValue() + " {" +
+                    mySeats + "}");
+            pout.flush();
+            this.otherServer.close();
+        } catch(SocketTimeoutException e){
+            System.out.println("SendSeats" + e);
+        }catch (IOException e) {
+            System.out.println("SendSeats" + e);
+        }
     }
     public synchronized void handleMsg(String command) {
         // command in format: <action> <pid> <lcv>
@@ -178,7 +186,11 @@ public class LamportMutex {
             sendSeats(otherPid);
         } else if (tag.equals("respInit")) {
            // set mySeats
-           String[] mySeats = command.substring(command.indexOf("[") + 1, command.indexOf("]")).split(", ");
+           System.out.println("HandleMsg respInit: " + command);
+           String sub = command.substring(command.indexOf("{") + 1, command.indexOf("}"));
+           System.out.println(sub);
+           String[] mySeats = sub.split(", ");
+           System.out.println(mySeats);
            this.seats = new SeatingTable(mySeats.length, mySeats);
            this.numInitResp++;
         }

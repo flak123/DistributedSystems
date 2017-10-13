@@ -38,9 +38,9 @@ public class Server {
         // initialiize
         try {
             Socket s = new Socket();
-            this.lamportMutex.requestCS(s);
+            //this.lamportMutex.requestCS(s);
             this.seats = this.lamportMutex.getInitial(s);
-            this.lamportMutex.releaseCS();
+            //this.lamportMutex.releaseCS();
         } catch (Exception e) {
             System.err.println("ServerError:" + e);
         }
@@ -82,25 +82,15 @@ public class Server {
                     tokens[0].equals("release") || 
                     tokens[0].equals("ack")     ||
                     tokens[0].equals("init")    ||
-                    tokens[0].equals("initResp")
+                    tokens[0].equals("respInit")
                 ) {
+                    System.out.println("HERE1");
                     ns.lamportMutex.handleMsg(command);
+                    System.out.println("HERE2");
                 } else {
                     // spawn ServerThread to handle client requests
-                    System.out.println("Waiting on cs...");
-                    ns.lamportMutex.requestCS(s);
-                    System.out.println("Inside CS!!!");
-                    Thread t = new ServerThread(ns.seats, s, command);
-                    t.start();
-                    t.join();
-                    // TODO: send seating table to all other servers
-                    ns.lamportMutex.sendAllSeats();
-                    ns.lamportMutex.releaseCS();
-                    System.out.println("CS RELEASED");
-                    // Status of system
-                    for(int seat=0; seat < ns.seats.seatArray.length; seat++) {
-                        System.out.println(seat + ":  "+  ns.seats.seatArray[seat].name);
-                    }
+                    Thread t = new RunnerThread(ns, s, command);
+                    t.start(); 
                 }
             }
         } catch (Exception e) {
