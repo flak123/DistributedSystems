@@ -211,6 +211,9 @@ public class LamportMutex {
                 largePid = i;
             }
         }
+        if(largePid == this.myId){
+            return this.seats;
+        }
         boolean connected = false;
         try {
             //this.getServerSocket(neighbors.serverList[largePid].hostAddress, neighbors.serverList[largePid].portNum);

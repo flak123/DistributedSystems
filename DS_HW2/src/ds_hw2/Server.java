@@ -13,6 +13,7 @@ public class Server {
     SeatingTable seats;
     ServerTable serverDirectory;
     int numSeats;
+    Boolean init = false;
   
     public Server(int id, int numServ, int numSeats){
         this.myId = id-1;
@@ -32,18 +33,10 @@ public class Server {
             servers[i] = userInput;    
         }
         this.serverDirectory = new ServerTable(numServ, servers);
-        this.lamportMutex = new LamportMutex(this.myId, this.serverDirectory, this.seats);
         this.myHost = this.serverDirectory.serverList[this.myId].hostAddress;
         this.myPort = this.serverDirectory.serverList[this.myId].portNum;
         // initialiize
-        try {
-            Socket s = new Socket();
-            //this.lamportMutex.requestCS(s);
-            this.seats = this.lamportMutex.getInitial(s);
-            //this.lamportMutex.releaseCS();
-        } catch (Exception e) {
-            System.err.println("ServerError:" + e);
-        }
+        
     }
   
     public static void main (String[] args) {
@@ -64,16 +57,26 @@ public class Server {
 
         //Listener
         Server ns = new Server(serverID, numServ, numSeats);
+        ns.lamportMutex = new LamportMutex(ns.myId, ns.serverDirectory, ns.seats);
         System.out.println("Server started:");
         try {
             ServerSocket listener = new ServerSocket(ns.myPort);
             Socket s;
             while((s = listener.accept()) != null) {
+                try {
+                     //this.lamportMutex.requestCS(s);
+                    ns.seats = ns.lamportMutex.getInitial(s);
+                    //this.lamportMutex.releaseCS();
+                    } catch (Exception e) {
+                        System.err.println("ServerError:" + e);
+                    }
+                ns.init = true;
                 // Server sync requests are:
                 // request <pid> <lcv>
                 // ack <pid> <lcv>
                 // release <pid> <lcv>
                 Scanner sc = new Scanner(s.getInputStream());
+                
                 String command;
                 command = sc.nextLine();
                 System.out.println("Recieved: " + command);
