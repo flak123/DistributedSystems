@@ -118,7 +118,7 @@ public class LamportMutex {
         String mySeats = "";
         String eachSeat = "";
         for (int i = 0; i < this.numSeats; i++) {
-            if (this.seats.seatArray[i].available) {
+            if (!this.seats.seatArray[i].available) {
                 eachSeat = this.seats.seatArray[i].name + ":" +
                     this.seats.seatArray[i].available.toString();
             } else {
@@ -215,6 +215,7 @@ public class LamportMutex {
         try {
             //this.getServerSocket(neighbors.serverList[largePid].hostAddress, neighbors.serverList[largePid].portNum);
             this.otherServer = new Socket();
+            System.out.println(neighbors.serverList[largePid].portNum);
             this.otherServer.connect(new InetSocketAddress(neighbors.serverList[largePid].hostAddress, 
                     neighbors.serverList[largePid].portNum), timeoutTime);
             connected = true;

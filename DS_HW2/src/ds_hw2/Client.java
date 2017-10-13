@@ -1,4 +1,3 @@
-
 import java.net.*;
 import java.io.*;
 import java.util.Scanner;
@@ -43,39 +42,40 @@ public class Client {
             //int portNum = tcpPort;
 
             if ((tokens[0].equals("reserve")) || (tokens[0].equals("bookSeat")) || (tokens[0].equals("search")) || (tokens[0].equals("delete"))) {
-                // TODO: send appropriate command to the server and display the
-                // appropriate responses form the server
                 try {
                     Boolean connection = false;
-                    //int i = 0;
-                    while(!connection){
-                        //myClient.getSocket(myServers.serverList[i].hostAddress, myServers.serverList[i].portNum);
-                        for(int i = 0; i < numServers; i++){
-                            try{
-                                //myClient.getSocket(myServers.serverList[i].hostAddress, myServers.serverList[i].portNum);
-                                // TODO: get this to work. Right now we are double connecting
-                                myClient.tcpServer = new Socket();
-                                myClient.tcpServer.connect(new InetSocketAddress(myServers.serverList[i].hostAddress, myServers.serverList[i].portNum), timeoutTime);
-                                connection = true;
-                                System.out.println("Connection successful");
-                            }catch(SocketTimeoutException e){
-                                System.out.println("Connection failed "  + e);
-                            }
+                    int i = 0;
+                    while(!connection && i < numServers){
+                        System.out.println(myServers.serverList[i].hostAddress);
+                        System.out.println(myServers.serverList[i].portNum);
+                        System.out.println(timeoutTime);
+                        try{
+                            //myClient.getSocket(myServers.serverList[i].hostAddress, myServers.serverList[i].portNum);
+                            // TODO: get this to work. Right now we are double connecting
+                            myClient.tcpServer = new Socket();
+                            myClient.tcpServer.connect(new InetSocketAddress(myServers.serverList[i].hostAddress, myServers.serverList[i].portNum), timeoutTime);
+                            myClient.pout = new PrintStream(myClient.tcpServer.getOutputStream());
+                            myClient.din = new Scanner(myClient.tcpServer.getInputStream());
+                            connection = true;
+                            System.out.println("Connection successful");
+                        }catch(SocketTimeoutException e){
+                            System.out.println("Connection failed "  + e);
                         }
+                        i++;
                     }
-                    System.out.println("sending cmd");
+                    System.out.println("sending cmd: " + cmd);
                     myClient.pout.println(cmd);
                     myClient.pout.flush();
                     //int retValue = din.nextInt();
                     String response = myClient.din.nextLine();
                     System.out.println(response);
-                    while(myClient.din.hasNextLine()){
+                    /*while(myClient.din.hasNextLine()){
                         response = myClient.din.nextLine();
                         System.out.println(response);
-                    }
+                    }*/
                     myClient.tcpServer.close();
                 } catch (Exception e){
-                    System.out.println("Error: " + e);
+                    System.out.println("ClientError: " + e);
                 }
             } else {
                 System.out.println("ERROR: No such command");
@@ -83,5 +83,6 @@ public class Client {
         }
     }
 }
+
 
 

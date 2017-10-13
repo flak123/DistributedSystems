@@ -69,10 +69,10 @@ public class Client {
                     //int retValue = din.nextInt();
                     String response = myClient.din.nextLine();
                     System.out.println(response);
-                    while(myClient.din.hasNextLine()){
+                    /*while(myClient.din.hasNextLine()){
                         response = myClient.din.nextLine();
                         System.out.println(response);
-                    }
+                    }*/
                     myClient.tcpServer.close();
                 } catch (Exception e){
                     System.out.println("ClientError: " + e);

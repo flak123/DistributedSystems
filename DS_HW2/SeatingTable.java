@@ -49,7 +49,7 @@ public class SeatingTable {
     
     // no available seats: -2
     // user already booked seat: -3
-    // seat sucsessfully booked: <positive seatNum>
+    // seat successfully booked: <positive seatNum>
     public int reserveSeat(String name){
         int check = checkPreviousReservations(name);
         if (check != 0){
